@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produse Favorite</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main>
+        <h1>❤️ Produse Favorite</h1>
+        <div class="wishlist-container">
+            <% if (products.length > 0) { %>
+                <% products.forEach(product => { %>
+                    <a href="/product/<%= product.id %>" class="wishlist-item-link">
+                        <div class="wishlist-item">
+                            <img src="/images/<%= product.image %>" alt="<%= product.name %>">
+                            <h3><%= product.name %></h3>
+                            <p>Preț: <%= product.price %> RON</p>
+                            <button class="remove-wishlist" data-id="<%= product.id %>">❌ Elimină</button>
+                        </div>
+                    </a>
+                <% }); %>
+            <% } else { %>
+                <p>Nu ai produse favorite încă!</p>
+            <% } %>
+        </div>
+    </main>
+    
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".remove-wishlist").forEach(button => {
+                button.addEventListener("click", async function () {
+                    const productId = this.dataset.id;
+                    try {
+                        const response = await fetch("/wishlist/remove", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ product_id: productId })
+                        });
+
+                        const data = await response.json();
+                        alert(data.message);
+                        location.reload();
+                    } catch (error) {
+                        console.error("❌ Eroare la eliminarea produsului:", error);
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

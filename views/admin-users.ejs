@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrare Utilizatori</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="admin-panel">
+        <h1 class="page-title">Administrare Utilizatori</h1>
+
+        <nav class="admin-nav">
+            <a href="/admin" class="admin-link">Înapoi la Panou Administrare</a>
+        </nav>
+
+        <section class="admin-section">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user => { %>
+                        <% if (user.id !== currentUserId) { %>
+                            <tr>
+                                <td><%= user.id %></td>
+                                <td><%= user.email %></td>
+                                <td><%= user.role %></td>
+                                <td>
+                                    <% if (user.role === 'admin') { %>
+                                        <button class="action-button set-user" onclick="updateRole('<%= user.id %>', 'user')">Setează User</button>
+                                    <% } else { %>
+                                        <button class="action-button set-admin" onclick="updateRole('<%= user.id %>', 'admin')">Setează Admin</button>
+                                    <% } %>
+                                    <button class="action-button delete-user" onclick="deleteUser('<%= user.id %>')">Șterge</button>
+                                </td>
+                            </tr>
+                        <% } %>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        async function updateRole(userId, newRole) {
+            try {
+                const response = await fetch('/admin/users/update-role', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, newRole })
+                });
+
+                if (response.ok) {
+                    alert('Rol actualizat cu succes!');
+                    location.reload();
+                } else {
+                    alert('Eroare la actualizarea rolului!');
+                }
+            } catch (err) {
+                console.error('Eroare la fetch:', err);
+                alert('Eroare la actualizarea rolului!');
+            }
+        }
+        async function deleteUser(userId) {
+    if (!confirm('Sigur vrei să ștergi acest utilizator?')) return;
+
+    try {
+        const response = await fetch('/admin/users/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+
+        if (response.ok) {
+            alert('Utilizator șters cu succes!');
+            location.reload();
+        } else {
+            alert('Eroare la ștergerea utilizatorului!');
+        }
+    } catch (err) {
+        console.error('Eroare la fetch:', err);
+        alert('Eroare la ștergerea utilizatorului!');
+    }
+}
+    </script>
+</body>
+</html>

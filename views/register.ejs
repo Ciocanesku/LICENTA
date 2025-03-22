@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Înregistrare</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="register-container">
+        <h1 class="register-title">Înregistrare</h1>
+        <form id="registerForm" class="register-form">
+            <div class="form-group">
+                <label for="firstName">Prenume:</label>
+                <input type="text" id="firstName" name="firstName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Nume:</label>
+                <input type="text" id="lastName" name="lastName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Număr de telefon:</label>
+                <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" required placeholder="07XXXXXXXX">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Parolă:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="register-button">Înregistrează-te</button>
+        </form>
+    </main>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert('Înregistrare reușită! Te poți autentifica acum.');
+                window.location.href = '/login';
+            } else {
+                const errorMessage = await response.text();
+                alert(errorMessage);
+            }
+        });
+    </script>
+</body>
+</html>

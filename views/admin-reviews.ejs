@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrare Produse</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <h1>Gestionare Recenzii</h1>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Utilizator</th>
+                <th>Produs</th>
+                <th>Rating</th>
+                <th>Comentariu</th>
+                <th>Status</th>
+                <th>Acțiuni</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% reviews.forEach(review => { %>
+                <tr>
+                    <td><%= review.user_email %></td>
+                    <td><%= review.product_name %></td>
+                    <td><%= review.rating %>/5</td>
+                    <td><%= review.comment %></td>
+                    <td>
+                        <% if (review.is_approved) { %>
+                            ✅ Aprobat
+                        <% } else { %>
+                            ❌ Neaprobat
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (!review.is_approved) { %>
+                            <button onclick="approveReview('<%= review.id %>')">Aprobă</button>
+                        <% } %>
+                        <button onclick="deleteReview('<%= review.id %>')">Șterge</button>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</body>
+    <script>
+    async function approveReview(reviewId) {
+        const response = await fetch('/admin/reviews/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId })
+        });
+        if (response.ok) {
+            alert('Recenzia a fost aprobată!');
+            location.reload();
+        } else {
+            alert('Eroare la aprobarea recenziei.');
+        }
+    }
+    
+    async function deleteReview(reviewId) {
+        if (!confirm('Sigur vrei să ștergi această recenzie?')) return;
+    
+        const response = await fetch('/admin/reviews/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId })
+        });
+        if (response.ok) {
+            alert('Recenzia a fost ștearsă!');
+            location.reload();
+        } else {
+            alert('Eroare la ștergerea recenziei.');
+        }
+    }
+    </script>
+    

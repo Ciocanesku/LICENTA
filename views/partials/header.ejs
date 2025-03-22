@@ -1,0 +1,74 @@
+<header class="navbar">
+    <div class="logo-container">
+        <a href="/" class="logo-link">
+            <img src="/images/logo-light.png" alt="Logo" class="logo" id="logo">
+        </a>
+    </div>
+
+    <nav class="nav-links">
+        <% if (user) { %>
+            <% if (user.role === 'user') { %>
+                <a href="/cart">Coșul meu</a>
+                <a href="/wishlist">Wishlist</a>
+                <a href="/dashboard">Profilul meu</a>
+            <% } else if (user.role === 'admin') { %>
+                <a href="/admin">Admin</a>
+                <a href="/admin/dashboard">Gestionare Comenzi</a>
+                <a href="/admin/reviews">Gestionare Recenzii</a>
+            <% } %>
+        <% } else { %>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        <% } %>
+        <a href="/chat">Suport</a>
+    </nav>
+
+    <div class="right-section">
+        <% if (user) { %>
+            <form action="/logout" method="GET" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        <% } %>
+
+        <div class="theme-toggle">
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="theme-label">Mod Întunecat</span>
+        </div>
+    </div>
+</header>
+
+
+
+<script>
+const darkModeToggle = document.getElementById('darkModeToggle');
+const logo = document.getElementById('logo');
+
+function updateLogo() {
+    if (localStorage.getItem('dark-mode') === 'enabled') {
+        logo.src = '/images/logo-dark.png';
+    } else {
+        logo.src = '/images/logo-light.png';
+    }
+}
+
+if (localStorage.getItem('dark-mode') === 'enabled') {
+    document.body.classList.add('dark-mode');
+    darkModeToggle.checked = true;
+}
+updateLogo();
+
+darkModeToggle.addEventListener('change', () => {
+    if (darkModeToggle.checked) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('dark-mode', 'enabled');
+    } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('dark-mode', 'disabled');
+    }
+    updateLogo();
+});
+
+</script>

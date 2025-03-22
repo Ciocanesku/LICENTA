@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="admin-dashboard">
+        <header class="dashboard-header">
+            <h1 class="page-title">Dashboard Admin</h1>
+            <nav class="dashboard-nav">
+                <a href="/" class="dashboard-link">Înapoi la magazin</a>
+            </nav>
+        </header>
+
+        <section class="recent-orders">
+            <h2 class="section-title">Comenzi Recente</h2>
+            <% if (orders.length === 0) { %>
+                <p class="no-orders">Nu există comenzi în sistem.</p>
+            <% } else { %>
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ID Comandă</th>
+                            <th>Total</th>
+                            <th>Data</th>
+                            <th>Email Utilizator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td><%= order.order_id %></td>
+                                <td>$<%= order.total_price %></td>
+                                <td><%= new Date(order.created_at).toLocaleString() %></td>
+                                <td><%= order.user_email %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } %>
+        </section>
+    </main>
+</body>
+</html>

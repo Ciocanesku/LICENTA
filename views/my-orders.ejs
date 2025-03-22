@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comenzile mele</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header>
+        <%- include('partials/header') %>
+    </header>
+
+    <main>
+        <div class="orders-container">
+            <h1>Comenzile mele</h1>
+            <a href="/" class="btn">Înapoi la catalog</a>
+            <% if (orders.length === 0) { %>
+                <p class="no-orders">Nu aveți nicio comandă.</p>
+            <% } else { %>
+                <% orders.forEach(order => { %>
+                    <div class="order-card">
+                        <h2>Comanda #<%= order.id %></h2>
+                        <p><strong>Total:</strong> $<%= order.total_price %></p>
+                        <p><strong>Data:</strong> <%= new Date(order.created_at).toLocaleString() %></p>
+                        <ul class="order-items">
+                            <% order.items.forEach(item => { %>
+                                <li>
+                                    <span><strong><%= item.name %></strong></span>
+                                    <span><%= item.quantity %> x $<%= item.price %></span>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </main>
+</body>
+</html>
