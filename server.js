@@ -12,8 +12,8 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const bodyParser = require('body-parser');
 
-console.log("🔑 API_URL:", process.env.API_URL);
-console.log("🔑 API Key Loaded:", process.env.HF_API_TOKEN ? "Yes" : "No");
+console.log("API_URL:", process.env.API_URL);
+console.log("API Key Loaded:", process.env.HF_API_TOKEN ? "Yes" : "No");
 const API_URL = process.env.API_URL;
 const HF_API_TOKEN = process.env.HF_API_TOKEN;
 
@@ -38,7 +38,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'shop.ckn.off@gmail.com',  
-        pass: 'oyuu gsxj ecyb qblv'   
+        pass: ''   
     }
 });
 
