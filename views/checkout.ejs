@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizare Comandă</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="checkout-container">
+        <h1>Finalizare Comandă</h1>
+
+        <section class="order-summary">
+            <h2>Produsele din comandă</h2>
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>Produs</th>
+                        <th>Preț</th>
+                        <th>Cantitate</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="checkout-cart"></tbody>
+            </table>
+            <h3 id="checkout-total-price"></h3>
+        </section>
+
+        <section class="shipping-info">
+            <h2>Adresa de Livrare</h2>
+            <form id="checkoutForm">
+                <label for="address">Adresă:</label>
+                <input type="text" id="address" required placeholder="Introdu adresa completă">
+                
+                <h2>Metoda de Plată</h2>
+                <label>
+                    <input type="radio" name="payment-method" value="Ramburs la livrare" required> Ramburs la livrare
+                </label>
+                <label>
+                    <input type="radio" name="payment-method" value="Card bancar"> Card bancar
+                </label>
+
+                <button type="submit" id="confirm-order" class="checkout-button">Confirmă Comanda</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cart = JSON.parse(sessionStorage.getItem('checkoutCart')) || [];
+            const discount = parseInt(sessionStorage.getItem('checkoutDiscount')) || 0;
+            const cartContainer = document.getElementById('checkout-cart');
+            const totalPriceElement = document.getElementById('checkout-total-price');
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = "<p>Nu există produse în coș.</p>";
+                return;
+            }
+
+            let totalPrice = 0;
+            cartContainer.innerHTML = cart.map(item => {
+                totalPrice += item.price * item.quantity;
+                return `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.price} RON</td>
+                        <td>${item.quantity}</td>
+                        <td>${(item.price * item.quantity).toFixed(2)} RON</td>
+                    </tr>`;
+            }).join("");
+
+            let discountAmount = (discount > 0) ? totalPrice * (discount / 100) : 0;
+            totalPrice -= discountAmount;
+
+            totalPriceElement.innerHTML = `Total: ${totalPrice.toFixed(2)} ${discount > 0 ? `(Reducere: -${discountAmount.toFixed(2)} RON, ${discount}%)` : ''} RON` ;
+        });
+
+        document.getElementById('checkoutForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const cart = JSON.parse(sessionStorage.getItem('checkoutCart')) || [];
+    const discount = parseInt(sessionStorage.getItem('checkoutDiscount')) || 0;
+    const promoCode = localStorage.getItem('promoCode') || null;
+    const address = document.getElementById('address').value.trim();
+    const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value;
+
+    if (!address || address.length < 10) {
+        alert('Adresa trebuie să aibă cel puțin 10 caractere!');
+        return;
+    }
+
+    if (!paymentMethod) {
+        alert('Selectează o metodă de plată!');
+        return;
+    }
+
+    try {
+        const response = await fetch('/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart, discount, promoCode, address, paymentMethod })
+        });
+
+        const message = await response.text();
+
+        if (response.ok) {
+            alert('Comanda a fost plasată cu succes!');
+            sessionStorage.removeItem('checkoutCart');
+            sessionStorage.removeItem('checkoutDiscount');
+            localStorage.removeItem('cart');
+            localStorage.removeItem('promoCode'); // Elimină promo code-ul după plasarea comenzii
+            window.location.href = '/order-success';
+        } else {
+            alert(`Eroare: ${message}`);
+        }
+    } catch (err) {
+        console.error('Eroare la trimiterea comenzii:', err);
+        alert('A apărut o eroare, încearcă din nou!');
+    }
+});
+
+    </script>
+</body>
+</html>

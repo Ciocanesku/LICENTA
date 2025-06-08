@@ -1,0 +1,171 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coșul meu</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<%- include('partials/header') %>
+
+<h1>Coșul Meu</h1>
+<div id="cart-items" class="cart-container"></div>
+<p id="total-price" class="total-price"></p>
+
+<!-- Secțiune pentru cod promo -->
+<div class="promo-code-container">
+    <label for="promo-code">Cod Promo:</label>
+    <input type="text" id="promo-code" placeholder="Introdu codul promo">
+    <button id="apply-promo">Aplică</button>
+    <button id="remove-promo" style="display: none;">Elimină</button>
+    <p id="promo-message"></p>
+</div>
+
+<button id="checkout-button" class="checkout-button">Finalizează Comanda</button>
+
+<script>
+ // Inițializare coș și discount
+ const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let appliedDiscount = parseInt(localStorage.getItem('discount')) || 0;
+    const cartItemsDiv = document.getElementById('cart-items');
+    const totalPriceP = document.getElementById('total-price');
+    const checkoutButton = document.getElementById('checkout-button');
+
+    function updateCart() {
+        cartItemsDiv.innerHTML = '';
+        let totalPrice = 0;
+
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = '<p class="empty-cart">Coșul este gol!</p>';
+            checkoutButton.style.display = 'none';
+            totalPriceP.innerText = '';
+            return;
+        }
+
+        cart.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('cart-item');
+            itemDiv.style.cursor = 'pointer';
+            itemDiv.onclick = () => window.location.href = `/product/${item.id}`;
+            itemDiv.innerHTML = `
+                <div class="cart-product-info">
+                    <div>
+                        <p class="cart-product-name"><strong>${item.name}</strong></p>
+                        <p class="cart-product-price">Preț: ${item.price} RON</p>
+                        <p class="cart-product-size">Mărime: <strong>${item.size}</strong></p>
+                        <label>
+                            Cantitate:
+                            <input type="number" min="1" max="${item.stock}" value="${item.quantity}" data-index="${index}" class="quantity-input">
+                        </label>
+                        <p class="cart-product-total">Total: ${(item.price * item.quantity).toFixed(2)} RON</p>
+                        <button class="remove-item" data-index="${index}">Elimină</button>
+                    </div>
+                </div>
+            `;
+            cartItemsDiv.appendChild(itemDiv);
+            totalPrice += item.price * item.quantity;
+        });
+
+        let discountAmount = 0;
+        if (appliedDiscount > 0) {
+            discountAmount = totalPrice * (appliedDiscount / 100);
+            totalPrice -= discountAmount;
+        }
+
+        totalPriceP.innerText = `Total: ${totalPrice.toFixed(2)} RON ${appliedDiscount > 0 ? `(Reducere: -${discountAmount.toFixed(2)} RON, ${appliedDiscount}%)` : ''}`;
+        checkoutButton.style.display = 'inline-block';
+
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                cart.splice(index, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCart();
+            });
+        });
+    }
+
+    updateCart();
+    document.addEventListener('DOMContentLoaded', () => {
+    const storedPromo = localStorage.getItem('promoCode');
+    if (storedPromo) {
+        document.getElementById('promo-code').value = storedPromo;
+        document.getElementById('apply-promo').disabled = true;
+        document.getElementById('promo-code').disabled = true;
+        document.getElementById('remove-promo').style.display = 'inline-block';
+    }
+});
+
+document.getElementById('apply-promo').addEventListener('click', async () => {
+    const promoInput = document.getElementById('promo-code').value.trim().toUpperCase();
+    const promoMessage = document.getElementById('promo-message');
+
+    if (!promoInput) {
+        promoMessage.innerText = "Te rugăm să introduci un cod promo!";
+        promoMessage.style.color = "red";
+        return;
+    }
+
+    try {
+        const response = await fetch('/validate-promo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ promoCode: promoInput })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            appliedDiscount = data.discount;
+            promoMessage.innerText = `Cod aplicat! Reducere de ${appliedDiscount}%.`;
+            promoMessage.style.color = "green";
+            localStorage.setItem('discount', appliedDiscount);
+            localStorage.setItem('promoCode', promoInput);
+            document.getElementById('apply-promo').disabled = true;
+            document.getElementById('promo-code').disabled = true;
+            document.getElementById('remove-promo').style.display = 'inline-block';
+        } else {
+            appliedDiscount = 0;
+            promoMessage.innerText = data.error;
+            promoMessage.style.color = "red";
+            localStorage.removeItem('discount');
+            localStorage.removeItem('promoCode');
+        }
+
+        updateCart();
+    } catch (error) {
+        console.error("Eroare la validarea codului promo:", error);
+        promoMessage.innerText = "Eroare la verificarea codului promo!";
+        promoMessage.style.color = "red";
+    }
+});
+
+document.getElementById('remove-promo').addEventListener('click', () => {
+    localStorage.removeItem('discount');
+    localStorage.removeItem('promoCode');
+    document.getElementById('promo-message').innerText = "Codul promo a fost eliminat.";
+    document.getElementById('promo-message').style.color = "gray";
+    document.getElementById('promo-code').value = "";
+    appliedDiscount = 0;
+    document.getElementById('apply-promo').disabled = false;
+    document.getElementById('promo-code').disabled = false;
+    document.getElementById('remove-promo').style.display = 'none';
+    updateCart();
+});
+
+    document.getElementById('checkout-button').addEventListener('click', () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const discount = parseInt(localStorage.getItem('discount')) || 0;
+
+    if (cart.length === 0) {
+        alert('Coșul este gol!');
+        return;
+    }
+
+    // Store data in session storage for checkout page
+    sessionStorage.setItem('checkoutCart', JSON.stringify(cart));
+    sessionStorage.setItem('checkoutDiscount', discount);
+
+    // Redirect to the checkout page
+    window.location.href = '/checkout';
+});
+
+</script>

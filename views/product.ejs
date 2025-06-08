@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= product.name %>
+    </title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <%- include('partials/header') %>
+
+        <main class="product-page">
+            <section class="product-detail-container">
+                <h1 class="product-title">
+                    <%= product.name %>
+                </h1>
+                <div class="product-detail">
+                    <img src="/images/<%= product.image %>" alt="<%= product.name %>" class="product-image">
+                    <div class="product-info">
+                        <p class="product-description">
+                            <%= product.description %>
+                        </p>
+                        <p class="product-price">Preț: <%= product.price %> RON
+                        </p>
+                        <% if (product.type==='Îmbrăcăminte sportivă' || product.type==='Încălțăminte sportivă' ) { %>
+                            <% let genFormatat=product.gender==='barbati' ? 'Bărbați' : product.gender==='femei'
+                                ? 'Femei' : product.gender==='unisex' ? 'Unisex' :
+                                product.gender.charAt(0).toUpperCase() + product.gender.slice(1); %>
+                                <p class="product-gender">Gen: <%= genFormatat %>
+                                </p>
+                                <% } %>
+
+                                    <!-- Selectarea mărimilor -->
+                                    <label for="sizeSelect">Alege mărimea:</label>
+                                    <select id="sizeSelect">
+                                        <option value="" disabled selected>Încărcare...</option>
+                                    </select>
+                                    <p id="stockDisplay"></p>
+
+                                    <button id="addToCart" data-id="<%= product.id %>" data-name="<%= product.name %>"
+                                        data-price="<%= product.price %>" class="add-to-cart-button">
+                                        Adaugă în coș
+                                    </button>
+
+                                    <button class="wishlist-button" data-id="<%= product.id %>">
+                                        ❤️ Adaugă la favorite
+                                    </button>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="review-summary">
+                <h3>📢 Rezumatul Recenziilor</h3>
+                <p id="reviewSummary">Încărcare...</p>
+            </section>
+
+
+            <section class="reviews-container">
+                <h2>Recenzii</h2>
+                <% if (reviews.length===0) { %>
+                    <p>Acest produs nu are recenzii.</p>
+                    <% } else { %>
+                        <ul class="reviews-list">
+                            <% reviews.forEach(review=> { %>
+                                <li class="review-item">
+                                    <p><strong>
+                                            <%= review.user_email %>
+                                        </strong> - Rating: <%= review.rating %>/5</p>
+                                    <p>
+                                        <%= review.comment %>
+                                    </p>
+                                    <p><small>Data: <%= new Date(review.created_at).toLocaleString() %></small></p>
+                                </li>
+                                <% }); %>
+                        </ul>
+                        <% } %>
+            </section>
+
+            <% if (user) { %>
+                <section class="add-review-container">
+                    <h3>Adaugă o recenzie</h3>
+                    <form id="reviewForm" class="review-form">
+                        <label for="rating">Rating (1-5):</label>
+                        <input type="number" id="rating" name="rating" min="1" max="5" required>
+                        <br>
+                        <label for="comment">Comentariu:</label>
+                        <textarea id="comment" name="comment" required></textarea>
+                        <br>
+                        <button type="submit" class="submit-review-button">Trimite</button>
+                    </form>
+                </section>
+                <% } else { %>
+                    <p class="login-to-review">Trebuie să fii autentificat pentru a adăuga o recenzie.</p>
+                    <% } %>
+        </main>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function () {
+                const productId = "<%= product.id %>";
+                const sizeSelect = document.getElementById('sizeSelect');
+                const stockDisplay = document.getElementById('stockDisplay');
+
+                async function loadSizes() {
+                    try {
+                        const response = await fetch(`/products/${productId}/sizes`);
+                        if (!response.ok) throw new Error('Eroare la încărcarea mărimilor');
+
+                        const sizes = await response.json();
+                        sizeSelect.innerHTML = '<option value="" disabled selected>Selectează mărimea</option>';
+
+                        sizes.forEach(size => {
+                            const option = document.createElement('option');
+                            option.value = size.size;
+                            option.textContent = `${size.size} (${size.stock} în stoc)`;
+                            sizeSelect.appendChild(option);
+                        });
+
+                        sizeSelect.addEventListener('change', () => {
+                            const selectedSize = sizeSelect.value;
+                            const selectedStock = sizes.find(size => size.size === selectedSize)?.stock || 0;
+                            stockDisplay.textContent = `Stoc disponibil: ${selectedStock}`;
+                        });
+                    } catch (error) {
+                        console.error('Eroare la încărcarea mărimilor:', error);
+                    }
+                }
+
+                await loadSizes();
+
+                // Gestionarea butonului "Adaugă în coș"
+                document.getElementById('addToCart')?.addEventListener('click', function () {
+                    const sizeSelect = document.getElementById('sizeSelect'); // Corectare ID
+                    const selectedSize = sizeSelect.value;
+                    const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+
+                    if (!selectedSize) {
+                        alert('Te rog să selectezi o mărime!');
+                        return;
+                    }
+
+                    const stock = parseInt(selectedOption.textContent.match(/\d+/)[0], 10); // Extrage numărul de stoc din textul opțiunii
+
+                    const product = {
+                        id: this.dataset.id,
+                        name: this.dataset.name,
+                        price: parseFloat(this.dataset.price),
+                        size: selectedSize,
+                        stock: stock,
+                        quantity: 1
+                    };
+
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+                    const existingProduct = cart.find(item => item.id === product.id && item.size === product.size);
+                    if (existingProduct) {
+                        if (existingProduct.quantity < stock) {
+                            existingProduct.quantity++;
+                            alert('Cantitatea produsului a fost actualizată!');
+                        } else {
+                            alert(`Stoc insuficient! Maxim disponibil: ${stock}`);
+                        }
+                    } else {
+                        cart.push(product);
+                        alert('Produsul a fost adăugat în coș!');
+                    }
+
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                });
+
+
+
+                // Gestionarea formularului de recenzii
+                document.getElementById('reviewForm')?.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const rating = document.getElementById('rating').value;
+                    const comment = document.getElementById('comment').value;
+
+                    const response = await fetch('/product/<%= product.id %>/review', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rating, comment })
+                    });
+
+                    if (response.ok) {
+                        alert('Recenzia a fost adăugată!');
+                        location.reload();
+                    } else {
+                        alert('A apărut o eroare. Te rugăm să încerci din nou.');
+                    }
+                });
+            });
+
+            async function loadReviewSummary() {
+                try {
+                    const response = await fetch(`/product/<%= product.id %>/review-summary`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        document.getElementById("reviewSummary").textContent = data.error;
+                        return;
+                    }
+
+                    // Gestionăm datele pentru a extrage Pro și Contra corect
+                    let pros = "Nu sunt suficiente date.";
+                    let cons = "Nu sunt suficiente date.";
+
+                    if (data.prosCons.includes("✅ Pro:") && data.prosCons.includes("❌ Contra:")) {
+                        pros = data.prosCons.split("✅ Pro:")[1].split("❌ Contra:")[0].trim();
+                        cons = data.prosCons.split("❌ Contra:")[1].trim();
+                    }
+
+                    document.getElementById("reviewSummary").innerHTML = `
+            <strong>⭐ Media rating:</strong> ${data.averageRating}/5 <br><br>
+            <strong>✅ Pro:</strong> <br> ${pros} <br><br>
+            <strong>❌ Contra:</strong> <br> ${cons}
+        `;
+
+                } catch (error) {
+                    console.error("Eroare la încărcarea analizei AI:", error);
+                    document.getElementById("reviewSummary").textContent = "Nu s-a putut genera analiza.";
+                }
+            }
+
+
+
+            loadReviewSummary();
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const wishlistButtons = document.querySelectorAll(".wishlist-button");
+
+                wishlistButtons.forEach(button => {
+                    button.addEventListener("click", async function () {
+                        const productId = this.dataset.id;
+                        const isFavorite = this.classList.contains("favorited");
+
+                        try {
+                            const response = await fetch(isFavorite ? "/wishlist/remove" : "/wishlist/add", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ product_id: productId })
+                            });
+
+                            const data = await response.json();
+                            alert(data.message);
+                            this.classList.toggle("favorited");
+                            this.textContent = isFavorite ? "❤️ Adaugă la favorite" : "❌ Elimină din favorite";
+                        } catch (error) {
+                            console.error("❌ Eroare la gestionarea wishlist-ului:", error);
+                        }
+                    });
+                });
+            });
+        </script>
+</body>
+
+</html>

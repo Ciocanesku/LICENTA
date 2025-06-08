@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalog Produse</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main>
+        <section id="top-products-gallery">
+            <h2>🔥 Cele mai vândute produse</h2>
+            <div id="top-products" class="product-list"></div>
+        </section>
+        
+        <h1>Catalog Produse</h1>
+
+        <form id="filterForm" class="filter-form">
+            <input type="text" id="search" name="search" placeholder="Caută produse...">
+            <select id="type" name="type">
+                <option value="">Toate categoriile</option>
+                <option value="Îmbrăcăminte sportivă">Îmbrăcăminte sportivă</option>
+                <option value="Încălțăminte sportivă">Încălțăminte sportivă</option>
+                <option value="Echipament sportiv">Echipament sportiv</option>
+                <option value="Accesorii sportive">Accesorii sportive</option>
+                <option value="Fitness & Bodybuilding">Fitness & Bodybuilding</option>
+            </select>
+            <input type="number" id="minPrice" name="minPrice" placeholder="Preț minim">
+            <input type="number" id="maxPrice" name="maxPrice" placeholder="Preț maxim">
+            <label>
+                <input type="checkbox" id="inStock" name="inStock">
+                Doar produse în stoc
+            </label>
+        </form>
+
+        <div id="productList" class="product-list"></div>
+    </main>
+
+    <script>
+async function fetchFilteredProducts() {
+    const search = document.getElementById('search').value;
+    const type = document.getElementById('type').value;
+    const minPrice = document.getElementById('minPrice').value;
+    const maxPrice = document.getElementById('maxPrice').value;
+    const inStock = document.getElementById('inStock').checked;
+
+    const queryParams = new URLSearchParams({ search, type, minPrice, maxPrice, inStock });
+
+    try {
+        const response = await fetch(`/products?${queryParams.toString()}`);
+        if (!response.ok) throw new Error('Eroare la obținerea produselor!');
+
+        const products = await response.json();
+        const productList = document.getElementById('productList');
+        productList.innerHTML = '';
+
+        if (products.length === 0) {
+            productList.innerHTML = '<p>Nu există produse disponibile pentru criteriile selectate.</p>';
+            return;
+        }
+
+        for (const product of products) {
+            const productDiv = document.createElement('div');
+            productDiv.classList.add('product');
+
+            // Facem ca doar click-ul pe div să ducă la pagina produsului, excluzând butonul și select-ul
+            productDiv.innerHTML = `
+                <a href="/product/${product.id}" class="product-link">
+                    <img src="/images/${product.image}" alt="${product.name}">
+                    <h2>${product.name}</h2>
+                    <p>${product.description}</p>
+                    <p>Preț: ${product.price} RON</p>
+                </a>
+
+                <label for="size-${product.id}">Alege mărimea:</label>
+                <select id="size-${product.id}" class="size-select">
+                    <option value="" disabled selected>Încărcare...</option>
+                </select>
+                <p id="stock-${product.id}"></p>
+
+                <button class="add-to-cart" 
+                        data-id="${product.id}" 
+                        data-name="${product.name}" 
+                        data-price="${product.price}">
+                    Adaugă în coș
+                </button>
+            `;
+
+            productList.appendChild(productDiv);
+
+            await loadProductSizes(product.id);
+        }
+
+        attachAddToCartEvents();
+    } catch (error) {
+        console.error('Eroare la filtrare:', error);
+        alert('Nu s-au putut încărca produsele!');
+    }
+}
+
+
+        async function loadProductSizes(productId) {
+            try {
+                const response = await fetch(`/products/${productId}/sizes`);
+                if (!response.ok) throw new Error('Eroare la încărcarea mărimilor');
+
+                const sizes = await response.json();
+                const sizeSelect = document.getElementById(`size-${productId}`);
+                const stockDisplay = document.getElementById(`stock-${productId}`);
+
+                sizeSelect.innerHTML = '<option value="" disabled selected>Selectează</option>';
+
+                sizes.forEach(size => {
+                    const option = document.createElement('option');
+                    option.value = size.size;
+                    option.textContent = `${size.size} (${size.stock} în stoc)`;
+                    option.dataset.stock = size.stock; // Stoc asociat mărimii
+                    sizeSelect.appendChild(option);
+                });
+
+                sizeSelect.addEventListener('change', () => {
+                    const selectedSize = sizeSelect.value;
+                    const selectedStock = sizes.find(size => size.size === selectedSize)?.stock || 0;
+                    stockDisplay.textContent = `Stoc disponibil: ${selectedStock}`;
+                });
+            } catch (error) {
+                console.error('Eroare la încărcarea mărimilor:', error);
+            }
+        }
+
+        function attachAddToCartEvents() {
+            document.querySelectorAll('.add-to-cart').forEach(button => {
+                button.addEventListener('click', function () {
+                    const productId = this.dataset.id;
+                    const sizeSelect = document.getElementById(`size-${productId}`);
+                    const selectedSize = sizeSelect.value;
+
+                    if (!selectedSize) {
+                        alert('Te rugăm să selectezi o mărime înainte de a adăuga în coș.');
+                        return;
+                    }
+
+                    const stock = parseInt(sizeSelect.options[sizeSelect.selectedIndex].dataset.stock, 10);
+                    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    const existingProduct = cart.find(item => item.id === productId && item.size === selectedSize);
+
+                    if (existingProduct) {
+                        if (existingProduct.quantity < stock) {
+                            existingProduct.quantity++;
+                            alert('Cantitatea produsului a fost actualizată!');
+                        } else {
+                            alert(`Stoc insuficient! Maxim disponibil: ${stock}`);
+                        }
+                    } else {
+                        cart.push({
+                            id: productId,
+                            name: this.dataset.name,
+                            price: parseFloat(this.dataset.price),
+                            size: selectedSize,
+                            stock: stock,
+                            quantity: 1
+                        });
+                        alert('Produsul a fost adăugat în coș!');
+                    }
+
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                });
+            });
+        }
+
+        document.getElementById('filterForm').addEventListener('input', () => {
+    fetchFilteredProducts();
+});
+fetchFilteredProducts();
+        let topProducts = [];
+let currentIndex = 0;
+
+async function fetchTopSellingProducts() {
+    try {
+        const response = await fetch('/products/top-selling');
+        if (!response.ok) throw new Error('Eroare la obținerea produselor!');
+
+        topProducts = await response.json();
+        updateProductCarousel();
+        setInterval(updateProductCarousel, 5000); // Schimbă produsele la fiecare 5 secunde
+    } catch (error) {
+        console.error('Eroare la încărcarea produselor populare:', error);
+        document.getElementById('top-products').innerHTML = '<p>Nu s-au putut încărca produsele populare.</p>';
+    }
+}
+
+function updateProductCarousel() {
+    const topProductsContainer = document.getElementById('top-products');
+    topProductsContainer.innerHTML = '';
+
+    const productsToShow = topProducts.slice(currentIndex, currentIndex + 3);
+
+    productsToShow.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.classList.add('product');
+
+        productDiv.innerHTML = `
+            <a href="/product/${product.id}" class="product-link">
+                <img src="/images/${product.image}" alt="${product.name}">
+                <h2>${product.name}</h2>
+                <p>Preț: ${product.price} RON</p>
+            </a>
+        `;
+
+        topProductsContainer.appendChild(productDiv);
+    });
+
+    currentIndex += 3;
+    if (currentIndex >= topProducts.length) {
+        currentIndex = 0; // Reia de la început când ajunge la sfârșit
+    }
+}
+
+// Apelează funcția la încărcarea paginii
+fetchTopSellingProducts();
+
+
+    </script>
+</body>
+</html>

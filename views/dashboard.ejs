@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="dashboard-container">
+        <h1>Dashboard</h1>
+
+        <!-- 🔹 Informațiile personale -->
+        <section class="user-info">
+            <h2>Informațiile personale</h2>
+            <form id="updateUserForm">
+                <label for="firstName">Prenume:</label>
+                <input type="text" id="firstName" name="firstName" value="<%= user.first_name %>" required>
+
+                <label for="lastName">Nume:</label>
+                <input type="text" id="lastName" name="lastName" value="<%= user.last_name %>" required>
+
+                <label for="phone">Număr de telefon:</label>
+                <input type="text" id="phone" name="phone" value="<%= user.phone %>" required pattern="[0-9]{10}" title="Numărul de telefon trebuie să conțină exact 10 cifre.">
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" value="<%= user.email %>" readonly>
+
+                <button type="submit">Salvează modificările</button>
+            </form>
+            <p id="updateMessage" style="display: none;"></p>
+        </section>
+
+        <!-- 🔹 Istoricul comenzilor -->
+        <section class="order-history">
+            <h2>Comenzile mele</h2>
+            <% if (orders.length === 0) { %>
+                <p>Nu ai plasat nicio comandă.</p>
+            <% } else { %>
+                <ul>
+                    <% orders.forEach(order => { %>
+                        <li>
+                            <strong>Comanda #<%= order.order_id %></strong> - Total: $<%= order.total_price %>
+                            <p>Plasată pe: <%= new Date(order.created_at).toLocaleString() %></p>
+                        </li>
+                    <% }); %>
+                </ul>
+            <% } %>
+        </section>
+    </main>
+
+    <script>
+        document.getElementById('updateUserForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!/^\d{10}$/.test(phone)) {
+                alert("Numărul de telefon trebuie să conțină exact 10 cifre.");
+                return;
+            }
+
+            const response = await fetch('/dashboard/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName, lastName, phone })
+            });
+
+            const messageElement = document.getElementById('updateMessage');
+            if (response.ok) {
+                messageElement.textContent = "Informațiile au fost actualizate!";
+                messageElement.style.color = "green";
+            } else {
+                messageElement.textContent = "Eroare la actualizare!";
+                messageElement.style.color = "red";
+            }
+            messageElement.style.display = "block";
+        });
+
+        // Verifică dacă datele sunt încărcate corect
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("✅ Date utilizator:", {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value
+            });
+        });
+    </script>
+</body>
+</html>

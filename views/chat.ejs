@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Suport</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <!-- 🔹 Includerea corectă a header-ului -->
+    <%- include('../views/partials/header') %>
+
+    <div class="chat-container">
+        <h2>Întrebări frecvente</h2>
+
+        <label for="categorySelect">Alege o categorie:</label>
+        <select id="categorySelect" onchange="loadQuestions()">
+            <option value="" disabled selected>Selectează o categorie</option>
+            <option value="comenzi">📦 Comenzi</option>
+            <option value="transport">🚚 Transport</option>
+            <option value="plata">💳 Plată</option>
+            <option value="reduceri">🔖 Reduceri</option>
+        </select>
+        <p> </p>
+        <label for="questionSelect">Alege o întrebare:</label>
+        <select id="questionSelect" onchange="getAnswer()" disabled>
+            <option value="" disabled selected>Selectează o întrebare</option>
+        </select>
+
+        <div id="answerBox"></div>
+    </div>
+
+    <!-- Secțiunea Contact -->
+    <div class="contact-container">
+        <h2>📞 Contactează-ne</h2>
+        <p><strong>Email:</strong> <a href="mailto:ckn.shop.off@gmail.com">ckn.shop.off@gmail.com</a></p>
+        <p><strong>Telefon:</strong> <a href="tel:+40712345678">+40 712 345 678</a></p>
+        <p><strong>Program:</strong> Luni - Vineri: 09:00 - 18:00</p>
+    </div>
+
+    <script>
+        const faq = {
+            comenzi: {
+                "Cum pot anula o comandă?": "Pentru anularea unei comenzi, contactează serviciul clienți cât mai repede.",
+                "Cum verific statusul comenzii mele?": "Poți verifica statusul comenzii în secțiunea 'Comenzile Mele' din contul tău.",
+                "Pot modifica o comandă după ce am plasat-o?": "Dacă nu a fost expediată, o putem modifica. Contactează serviciul clienți."
+            },
+            transport: {
+                "În cât timp primesc comanda?": "Livrăm în 1-3 zile lucrătoare.",
+                "Cât costă transportul?": "Transportul este gratuit pentru comenzi peste 200 RON. Altfel, costă 15 RON.",
+                "Ce curier folosiți?": "Lucrăm cu Fan Courier și Sameday pentru livrări rapide."
+            },
+            plata: {
+                "Ce metode de plată acceptați?": "Acceptăm plata cu card, PayPal și ramburs la livrare.",
+                "Pot plăti în rate?": "Da, oferim plata în rate prin carduri bancare selectate.",
+                "Este sigur să plătesc online?": "Da, folosim un sistem securizat de plată pentru a-ți proteja datele."
+            },
+            reduceri: {
+                "Aveți reduceri?": "Da, avem reduceri frecvente. Verifică secțiunea de oferte speciale.",
+                "Cum pot folosi un cod de reducere?": "Poți introduce codul de reducere la finalizarea comenzii.",
+                "Oferiți reduceri pentru studenți?": "Da, studenții beneficiază de 10% reducere la toate produsele."
+            }
+        };
+
+        function loadQuestions() {
+            const category = document.getElementById("categorySelect").value;
+            const questionSelect = document.getElementById("questionSelect");
+            
+            questionSelect.innerHTML = '<option value="" disabled selected>Selectează o întrebare</option>';
+            questionSelect.disabled = false;
+
+            for (let question in faq[category]) {
+                const option = document.createElement("option");
+                option.value = question;
+                option.textContent = question;
+                questionSelect.appendChild(option);
+            }
+        }
+
+        function getAnswer() {
+            const category = document.getElementById("categorySelect").value;
+            const question = document.getElementById("questionSelect").value;
+            document.getElementById("answerBox").innerHTML = `<p><strong>🤖 Răspuns:</strong> ${faq[category][question]}</p>`;
+        }
+    </script>
+
+</body>
+</html>

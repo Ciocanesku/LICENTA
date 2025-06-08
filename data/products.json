@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Poster Digital",
+    "price": 10,
+    "description": "Un poster frumos descărcabil.",
+    "image": "poster.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Font Artistic",
+    "price": 20,
+    "description": "Font vectorial premium.",
+    "image": "font.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Carte Digitala",
+    "price": "25",
+    "description": "Carte cu povesti",
+    "image": "carte.jpg"
+  }
+]

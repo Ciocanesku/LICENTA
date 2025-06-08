@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrare Produse</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="admin-panel">
+        <h1 class="page-title">Panou de Administrare</h1>
+
+        <nav class="admin-nav">
+            <a href="/admin/users" class="admin-link">Administrare Utilizatori</a>
+        </nav>
+
+        <section class="admin-section">
+            <h2 class="section-title">Produse Existente</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nume</th>
+                        <th>Tip</th>
+                        <th>Descriere</th>
+                        <th>Preț</th>
+                        <th>Imagine</th>
+                        <th>Stoc</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% products.forEach(product => { %>
+                        <tr>
+                            <td><%= product.id %></td>
+                            <td><input type="text" id="name-<%= product.id %>" value="<%= product.name %>" class="admin-input"></td>
+                            <td>
+                                <select id="type-<%= product.id %>" class="admin-input">
+                                    <option value="Îmbrăcăminte sportivă" <%= product.type === "Îmbrăcăminte sportivă" ? "selected" : "" %>>Îmbrăcăminte sportivă</option>
+                                    <option value="Încălțăminte sportivă" <%= product.type === "Încălțăminte sportivă" ? "selected" : "" %>>Încălțăminte sportivă</option>
+                                    <option value="Echipament sportiv" <%= product.type === "Echipament sportiv" ? "selected" : "" %>>Echipament sportiv</option>
+                                    <option value="Accesorii sportive" <%= product.type === "Accesorii sportive" ? "selected" : "" %>>Accesorii sportive</option>
+                                    <option value="Fitness & Bodybuilding" <%= product.type === "Fitness & Bodybuilding" ? "selected" : "" %>>Fitness & Bodybuilding</option>
+                                </select>
+                            </td>
+                            <td><input type="text" id="description-<%= product.id %>" value="<%= product.description %>" class="admin-input"></td>
+                            <td><input type="number" id="price-<%= product.id %>" value="<%= product.price %>" class="admin-input"></td>
+                            <td><input type="text" id="image-<%= product.id %>" value="<%= product.image %>" class="admin-input"></td>
+                            <td>
+                                <button onclick="toggleSizeStock('<%= product.id %>')" class="action-button">Editează stoc</button>
+                                <div id="size-stock-container-<%= product.id %>" class="size-stock-container" style="display: none;">
+                                    <table class="size-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Mărime</th>
+                                                <th>Stoc</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="size-stock-list-<%= product.id %>">
+                                            <!-- Stocurile pe mărimi vor fi încărcate prin JavaScript -->
+                                        </tbody>
+                                    </table>
+                                    <button onclick="updateSizeStock('<%= product.id %>')" class="action-button">Salvează</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="action-button edit" onclick="editProduct('<%= product.id %>')">Editează</button>
+                                <button class="action-button delete" onclick="deleteProduct('<%= product.id %>')">Șterge</button>
+
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="admin-section">
+            <h2 class="section-title">Adaugă un produs nou</h2>
+            <form class="add-product-form" action="/admin/products/add" method="POST" enctype="multipart/form-data">
+                <label for="name">Nume:</label>
+                <input type="text" id="name" name="name" required class="form-input">
+                
+                <label for="price">Preț:</label>
+                <input type="number" id="price" name="price" step="0.01" required class="form-input">
+                
+                <label for="description">Descriere:</label>
+                <textarea id="description" name="description" class="form-input"></textarea>
+                
+                <label for="type">Tip produs:</label>
+                <select id="type" name="type" required class="form-input" onchange="updateSizeOptions()">
+                    <option value="Îmbrăcăminte sportivă">Îmbrăcăminte sportivă</option>
+                    <option value="Încălțăminte sportivă">Încălțăminte sportivă</option>
+                    <option value="Echipament sportiv">Echipament sportiv</option>
+                    <option value="Accesorii sportive">Accesorii sportive</option>
+                    <option value="Fitness & Bodybuilding">Fitness & Bodybuilding</option>
+                </select>
+        
+                <!-- Câmpul pentru gen, afișat doar la îmbrăcăminte și încălțăminte -->
+                <div id="gender-container" style="display: none;">
+                    <label for="gender">Gen:</label>
+                    <select id="gender" name="gender" class="form-input">
+                        <option value="unisex">Unisex</option>
+                        <option value="barbati">Bărbați</option>
+                        <option value="femei">Femei</option>
+                    </select>
+                </div>
+        
+                <!-- Secțiunea pentru selecția mărimilor -->
+                <div id="size-container">
+                    <h3>Mărimi disponibile</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mărime</th>
+                                <th>Stoc</th>
+                            </tr>
+                        </thead>
+                        <tbody id="size-stock">
+                            <!-- Mărimile vor fi populate dinamic -->
+                        </tbody>
+                    </table>
+                </div>
+        
+                <label for="image">Imagine:</label>
+                <input type="file" id="image" name="image" accept="image/*" class="form-input">
+        
+                <button type="submit" class="form-button">Adaugă produs</button>
+            </form>
+        </section>
+        <section class="admin-section">
+            <h2 class="section-title">Adaugă un cod promoțional</h2>
+            <form id="promoForm" class="add-product-form">
+                <label for="code">Cod promoțional:</label>
+                <input type="text" id="code" name="code" class="form-input" placeholder="Ex: REDUCERE10" required>
+        
+                <label for="discount">Reducere (%):</label>
+                <input type="number" id="discount" name="discount" min="1" max="100" required class="form-input">
+        
+                <label for="expiresAt">Data expirării:</label>
+                <input type="date" id="expiresAt" name="expiresAt" required class="form-input">
+        
+                <button type="submit" class="form-button">Salvează codul</button>
+            </form>
+        </section>
+        
+    </main>
+
+    <script>
+async function editProduct(productId) {
+    const name = document.getElementById(`name-${productId}`).value;
+    const type = document.getElementById(`type-${productId}`).value;
+    const description = document.getElementById(`description-${productId}`).value;
+    const price = document.getElementById(`price-${productId}`).value;
+    const image = document.getElementById(`image-${productId}`).value; 
+
+    console.log('🔹 Date trimise către server:', { id: productId, name, type, price, description, image });
+
+    try {
+        const response = await fetch('/admin/products/edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: productId, name, type, price, description, image })
+        });
+
+        if (response.ok) {
+            alert('Produs actualizat cu succes!');
+            location.reload();
+        } else {
+            const errorMessage = await response.text();
+            alert('Eroare la actualizarea produsului: ' + errorMessage);
+        }
+    } catch (err) {
+        console.error('❌ Eroare la fetch:', err);
+        alert('Eroare la actualizarea produsului!');
+    }
+}
+
+
+        function toggleSizeStock(productId) {
+            const container = document.getElementById(`size-stock-container-${productId}`);
+            if (container.style.display === "none") {
+                container.style.display = "block";
+                loadSizeStock(productId);
+            } else {
+                container.style.display = "none";
+            }
+        }
+
+        async function loadSizeStock(productId) {
+            try {
+                const response = await fetch(`/admin/products/${productId}/sizes`);
+                const sizes = await response.json();
+
+                const sizeList = document.getElementById(`size-stock-list-${productId}`);
+                sizeList.innerHTML = "";
+
+                sizes.forEach(size => {
+                    sizeList.innerHTML += `
+                        <tr>
+                            <td>${size.size}</td>
+                            <td>
+                                <input type="number" id="size-stock-${productId}-${size.size}" value="${size.stock}" min="0">
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Eroare la încărcarea stocurilor pe mărimi:", error);
+                alert("Eroare la încărcarea stocurilor.");
+            }
+        }
+
+        async function updateSizeStock(productId) {
+            const sizeInputs = document.querySelectorAll(`#size-stock-list-${productId} input`);
+            const stockUpdates = [];
+
+            sizeInputs.forEach(input => {
+                const size = input.id.split('-').pop();
+                const stock = parseInt(input.value, 10);
+                stockUpdates.push({ size, stock });
+            });
+
+            try {
+                const response = await fetch(`/admin/products/${productId}/sizes/update`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stockUpdates })
+                });
+
+                if (response.ok) {
+                    alert("Stocurile au fost actualizate!");
+                } else {
+                    alert("Eroare la actualizarea stocurilor.");
+                }
+            } catch (error) {
+                console.error("Eroare la actualizarea stocurilor:", error);
+                alert("Eroare la actualizarea stocurilor.");
+            }
+        }
+
+
+
+        function updateSizeOptions() {
+        const type = document.getElementById('type').value;
+        const genderContainer = document.getElementById('gender-container');
+        const sizeStockTable = document.getElementById('size-stock');
+        sizeStockTable.innerHTML = '';
+
+        // Afișează câmpul pentru gen doar la îmbrăcăminte și încălțăminte
+        if (type === "Îmbrăcăminte sportivă" || type === "Încălțăminte sportivă") {
+            genderContainer.style.display = "block";
+        } else {
+            genderContainer.style.display = "none";
+        }
+
+        let sizes = [];
+        if (type === "Îmbrăcăminte sportivă") {
+            sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+        } else if (type === "Încălțăminte sportivă") {
+            const gender = document.getElementById('gender')?.value || "unisex";
+            sizes = (gender === "femei") ? [...Array(10).keys()].map(i => 34 + i) : [...Array(11).keys()].map(i => 37 + i);
+        } else {
+            sizes = ["Universal"];
+        }
+
+        sizes.forEach(size => {
+            sizeStockTable.innerHTML += `
+                <tr>
+                    <td>${size}</td>
+                    <td><input type="number" name="stock[${size}]" min="0" value="0"></td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById('type').addEventListener('change', updateSizeOptions);
+    document.getElementById('gender')?.addEventListener('change', updateSizeOptions);
+
+    window.onload = updateSizeOptions;
+
+
+
+    async function deleteProduct(productId) {
+        if (!confirm("Ești sigur că vrei să ștergi acest produs?")) return;
+
+        try {
+            const response = await fetch('/admin/products/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: productId })
+            });
+
+            if (response.ok) {
+                alert('Produs șters cu succes!');
+                location.reload();
+            } else {
+                alert('Eroare la ștergerea produsului!');
+            }
+        } catch (err) {
+            console.error('❌ Eroare la ștergerea produsului:', err);
+            alert('Eroare la ștergerea produsului!');
+        }
+    }
+
+    document.getElementById("promoForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const code = document.getElementById("code").value.trim();
+    const discount = document.getElementById("discount").value;
+    const expiresAt = document.getElementById("expiresAt").value;
+
+    if (!code || !discount || !expiresAt) {
+        alert("Completează toate câmpurile!");
+        return;
+    }
+
+    try {
+        const response = await fetch("/admin/promo-codes/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code, discount_percentage: discount, expires_at: expiresAt })
+        });
+
+        if (response.ok) {
+            alert("Cod promoțional salvat cu succes!");
+            document.getElementById("promoForm").reset();
+        } else {
+            const error = await response.text();
+            alert("Eroare la salvare: " + error);
+        }
+    } catch (error) {
+        console.error("❌ Eroare la trimiterea codului promoțional:", error);
+        alert("Eroare la server.");
+    }
+});
+
+    </script>
+</body>
+</html>
